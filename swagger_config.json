@@ -1,0 +1,204 @@
+{
+  "swagger":"2.0",
+  "info": {
+    "title": "Klusterthon - Fintech - Simplifying Small Business Payments",
+    "version": "1.0.0",
+    "description": "An application that enables small businesses to manage their payments efficiently. This app allows business owners to create profiles for each of their clients, track payment transactions, and receive real-time alerts for unpaid invoices."
+  },
+  "paths": {
+    "/swagger": {
+      "get": {
+        "summary": "Get Swagger UI",
+        "description": "Retrieve Swagger UI for API documentation",
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
+      }
+    },
+    "/swagger_yaml": {
+      "get": {
+        "summary": "Get Swagger YAML",
+        "description": "Retrieve Swagger YAML file for API documentation",
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Get Users",
+        "description": "Retrieve a list of users or a specific user by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "ID of the user",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create User",
+        "consumes": ["application/json"],
+        "description": "Create a new user",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "User data (email, firstName, lastName)",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string"
+                },
+                "firstName": {
+                  "type": "string"
+                },
+                "lastName": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "User created successfully"
+          },
+          "422": {
+            "description": "User with specified email exists"
+          },
+          "400": {
+            "description": "Invalid type of ID or missing required fields"
+          }
+        }
+      }
+    },
+    "/invoices": {
+      "get": {
+        "summary": "Get Invoices",
+        "description": "Retrieve a list of invoices or a specific invoice by ID, user ID, or status",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "ID of the invoice",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "ID of the user associated with the invoice",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Status of the invoice <paid, unpaid> Used if you specify the user_id",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid type of ID"
+          }
+        }
+      }
+    },
+    "/invoices/issue": {
+      "post": {
+        "summary": "Issue Invoice",
+        "consumes": ["application/json", "application/xml"],
+        "produces": ["application/json"],
+        "description": "Issue a new invoice for a user",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "ID of the user to issue the invoice to",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Invoice items",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "itemName": {
+                        "type": "string"
+                      },
+                      "quantity": {
+                        "type": "integer"
+                      },
+                      "price": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Invoice issued successfully"
+          },
+          "400": {
+            "description": "User ID missing in the URL or missing price/quantity in items"
+          }
+        }
+      }
+    },
+    "/invoices/pay": {
+      "post": {
+        "summary": "Pay Invoice",
+        "consumes": ["application/json"],
+        "description": "Mark an invoice as paid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "ID of the invoice to pay",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Invoice paid successfully"
+          },
+          "400": {
+            "description": "Invoice ID missing in the URL or no invoice found with such ID"
+          }
+        }
+      }
+    }
+  }
+}
