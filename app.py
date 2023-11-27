@@ -4,11 +4,12 @@ from bson import json_util as ju
 from pymongo.mongo_client import MongoClient
 from datetime import datetime
 import os
+from flask_cors import CORS
 from api import api
 
 app = Flask(__name__)
 app.register_blueprint(api,url_prefix='/api')
-
+CORS(app)
 uri = os.getenv("MONGODB_URI")
 # Create a new client and connect to the server
 client = MongoClient(uri)
