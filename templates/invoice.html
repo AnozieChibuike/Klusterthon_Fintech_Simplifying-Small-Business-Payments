@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}DashBoard{% endblock %}
+{% block content %}
+<div style="margin-right: 10px; box-shadow: 0 0 5px rgba(59, 59, 59, 0.584);">
+    <h1 style="text-align: center; color: black;">Invoice List</h1>
+    <table class="table table-striped" >
+    <thead>
+      <tr>
+        <th scope="col">Invoice</th>
+        <th scope="col">Customer Name</th>
+        <th scope="col">Customer Email</th>
+        <th scope="col">Issue Date</th>
+        <th scope="col">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for i in invoice %}
+      <tr>
+        <th scope="row">{{ i.number }}</th>
+        <td>{{ i.user.firstName }} {{ i.user.lastName }} </td>
+        <td>{{ i.user.email }}</td>
+        <td>{{ i.invoice.created_at.strftime('%Y-%m-%d') }}</td>
+        {% if i.invoice.paid %}
+        <td><span style="background-color: green; border-radius: 4px; color: white; padding: 2px 3.5px 2px 3.5px;">Paid</span></td>
+        {% else %}
+        <td><span style="background-color: blue; border-radius: 4px; color: white;  padding: 2px 3.5px 2px 5px;">Open</span></td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+
+<h1>Select a Product</h1>
+    
+    <select id="productDropdown">
+        <option value="product1">Product 1</option>
+        <option value="product2">Product 2</option>
+        <option value="product3">Product 3</option>
+        <!-- Add more product options as needed -->
+    </select>
+    
+    <button onclick="addSelectedProduct()">Add Selected Product</button>
+    
+    <h2>Selected Products</h2>
+    <ul id="selectedProducts"></ul>
+    
+    <script>
+        function addSelectedProduct() {
+            // Get the selected product from the dropdown
+            const dropdown = document.getElementById('productDropdown');
+            const selectedProduct = dropdown.value;
+            
+            // Check if the product is not already selected
+            if (!document.getElementById(selectedProduct)) {
+                // Add the selected product to the list
+                const selectedProductsList = document.getElementById('selectedProducts');
+                const listItem = document.createElement('li');
+                listItem.id = selectedProduct;
+                listItem.textContent = selectedProduct;
+                selectedProductsList.appendChild(listItem);
+                
+                // Remove the selected product from the dropdown
+                dropdown.remove(dropdown.selectedIndex);
+            } else {
+                alert("Product already selected!");
+            }
+        }
+    </script>
+{% endblock %}

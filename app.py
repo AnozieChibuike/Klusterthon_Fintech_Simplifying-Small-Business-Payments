@@ -19,7 +19,7 @@ try:
 except Exception as e:
     print(e)
 
-@app.route("/users", methods=["GET", "POST"])
+@app.route("/dashboard", methods=["GET", "POST"])
 def users():
     if request.method == "POST":
         data = request.form.get
@@ -46,38 +46,20 @@ def users():
     if id_:
         user = client.fintech.users.find_one({"_id": ObjectId(id_)})
         return render_template('users.html',user=user)
-    users = client.fintech.users.find()
-    return render_template('users.html',users=users)
+    users = list(client.fintech.users.find())
+    invoice = list(client.fintech.invoice.find())
+    paid = [value for value in invoice if value["paid"]]
+    Notpaid = [value for value in invoice if not value["paid"]]
+    product = list(client.fintech.invoice.find())
+    total = sum([i['items'][-1]['Overalltotal'] for i in invoice])
+    return render_template('users.html',total=total,users=users,invoice=invoice,paid=paid,Notpaid=Notpaid,product=product)
 
 @app.get("/invoices")
-def invoices():
-    args = request.args
-    id_ = args.get("id")
-    user_id = args.get("user_id")
-    status = args.get("status")
-    try:
-        if id_:
-            invoice = client.fintech.invoice.find_one({"_id": ObjectId(id_)})
-            return ju.dumps(invoice), 200, 
-        if user_id:
-            if status == "paid":
-                invoice = client.fintech.invoice.find(
-                    {"user_id": ObjectId(user_id), "paid": True}
-                )
-                return ju.dumps(invoice), 200, 
-            if status == "unpaid":
-                invoice = client.fintech.invoice.find(
-                    {"user_id": ObjectId(user_id), "paid": False}
-                )
-                return ju.dumps(invoice), 200, 
-            invoice = client.fintech.invoice.find({"user_id": ObjectId(user_id)})
-            return ju.dumps(invoice), 200, 
-    except:
-        invoice = {"message": "Invalid type of id"}
-        return ju.dumps(invoice), 400, 
-    invoice = client.fintech.invoice.find()
-    return ju.dumps(invoice), 200, 
-
+def invoices(): 
+    use = client.fintech.users
+    inv = client.fintech.invoice.find()
+    invoice = [{"user": use.find_one(i['user_id']),"invoice":i,'number':j+1} for j,i in enumerate(inv)]
+    return render_template('invoice.html',invoice=invoice)
 
 @app.post("/invoices/issue")
 def issue():
@@ -243,4 +225,4 @@ def products():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True,host='0.0.0.0')
