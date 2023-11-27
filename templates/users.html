@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 1em;
+            text-align: center;
+        }
+
+        section {
+            margin: 20px;
+        }
+
+        .invoice {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .invoice h2 {
+            color: #333;
+        }
+
+        .invoice table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .invoice th, .invoice td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .invoice th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Invoice Management System</h1>
+</header>
+
+<section>
+    <div class="invoice">
+        <h2>Invoice #001</h2>
+        <table>
+            <tr>
+                <th>Item</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+            </tr>
+            <tr>
+                <td>Item 1</td>
+                <td>Description of Item 1</td>
+                <td>5</td>
+                <td>$20.00</td>
+                <td>$100.00</td>
+            </tr>
+            <tr>
+                <td>Item 2</td>
+                <td>Description of Item 2</td>
+                <td>3</td>
+                <td>$15.00</td>
+                <td>$45.00</td>
+            </tr>
+        </table>
+        <p>Total Amount: $145.00</p>
+    </div>
+
+    <div class="invoice">
+        <h2>Invoice #002</h2>
+        <table>
+            <!-- Dummy data for another invoice -->
+        </table>
+        <p>Total Amount: $XXX.XX</p>
+    </div>
+</section>
+
+</body>
+</html>

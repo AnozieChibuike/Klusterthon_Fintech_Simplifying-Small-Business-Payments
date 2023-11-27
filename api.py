@@ -1,13 +1,9 @@
-from flask import Flask,flash, render_template, send_file,redirect, jsonify, request
+from flask import render_template, send_file, jsonify, request, Blueprint
 from bson import ObjectId
 from bson import json_util as ju
-from pymongo.mongo_client import MongoClient
 from datetime import datetime
 import os
-from api import api
-
-app = Flask(__name__)
-app.register_blueprint(api,url_prefix='/api')
+from pymongo import MongoClient
 
 uri = os.getenv("MONGODB_URI")
 # Create a new client and connect to the server
@@ -19,18 +15,38 @@ try:
 except Exception as e:
     print(e)
 
-@app.route("/users", methods=["GET", "POST"])
+
+api = Blueprint("api",__name__)
+
+
+headers = {"Content-Type": "application/json"}
+
+@api.route('/swagger')
+def swagger_ui():
+    return render_template('swagger_ui.html')
+
+@api.route('/swagger.json')
+def swagger_yaml():
+    return send_file('swagger_config.json', mimetype='application/json')
+
+@api.route("/users", methods=["GET", "POST"])
 def users():
     if request.method == "POST":
-        data = request.form.get
+        data = request.json.get
         email = data("email")
         firstName = data("firstName")
         lastName = data("lastName")
+        if not email and not firstName and not lastName:
+            return jsonify(
+                {
+                    "message": f"Missing required body,Email: {email},FirstName: {firstName}, LastName: {lastName}"
+                }
+            )
         created_at = datetime.now()
         if client.fintech.users.find_one({"email": email}):
-            flash("User with specified email exists")
-            return redirect("/users")
-        client.fintech.users.insert_one(
+            result = {"message": "User with specified email exists"}
+            return jsonify(result), 422
+        result = client.fintech.users.insert_one(
             {
                 "email": email,
                 "firstName": firstName,
@@ -39,17 +55,27 @@ def users():
                 "invoice": [],
             }
         )
-        flash("Client created successfully")
-        return redirect("/users")
+        return (
+            ju.dumps(
+                {
+                    "data": client.fintech.users.find_one(
+                        {"_id": ObjectId(result.inserted_id)}
+                    ),
+                    "message": "Data added successfully",
+                }
+            ),
+            201,
+            headers,
+        )
     args = request.args
     id_ = args.get("id")
     if id_:
         user = client.fintech.users.find_one({"_id": ObjectId(id_)})
-        return render_template('users.html',user=user)
-    users = client.fintech.users.find()
-    return render_template('users.html',users=users)
+    user = client.fintech.users.find()
+    return ju.dumps({"data": user}), 200, headers
 
-@app.get("/invoices")
+
+@api.get("/invoices")
 def invoices():
     args = request.args
     id_ = args.get("id")
@@ -58,28 +84,28 @@ def invoices():
     try:
         if id_:
             invoice = client.fintech.invoice.find_one({"_id": ObjectId(id_)})
-            return ju.dumps(invoice), 200, 
+            return ju.dumps(invoice), 200, headers
         if user_id:
             if status == "paid":
                 invoice = client.fintech.invoice.find(
                     {"user_id": ObjectId(user_id), "paid": True}
                 )
-                return ju.dumps(invoice), 200, 
+                return ju.dumps(invoice), 200, headers
             if status == "unpaid":
                 invoice = client.fintech.invoice.find(
                     {"user_id": ObjectId(user_id), "paid": False}
                 )
-                return ju.dumps(invoice), 200, 
+                return ju.dumps(invoice), 200, headers
             invoice = client.fintech.invoice.find({"user_id": ObjectId(user_id)})
-            return ju.dumps(invoice), 200, 
+            return ju.dumps(invoice), 200, headers
     except:
         invoice = {"message": "Invalid type of id"}
-        return ju.dumps(invoice), 400, 
+        return ju.dumps(invoice), 400, headers
     invoice = client.fintech.invoice.find()
-    return ju.dumps(invoice), 200, 
+    return ju.dumps(invoice), 200, headers
 
 
-@app.post("/invoices/issue")
+@api.post("/invoices/issue")
 def issue():
     user_id = request.args.get("user_id")
     products = request.json.get("products", [])  # list of dictionaries
@@ -143,6 +169,7 @@ def issue():
                 }
             ),
             201,
+            headers,
         )
 
     except ValueError as ve:
@@ -152,7 +179,7 @@ def issue():
 
 
 
-@app.post("/invoices/pay")
+@api.post("/invoices/pay")
 def pay():
     _id = request.args.get("id")
     if not _id:
@@ -174,9 +201,10 @@ def pay():
             }
         ),
         201,
+        headers,
     )
 
-@app.route("/products",methods=['GET','POST','PUT','DELETE'])
+@api.route("/products",methods=['GET','POST','PUT','DELETE'])
 def products():
     if request.method == "POST":
         data = request.json.get
@@ -203,6 +231,7 @@ def products():
             }
         ),
         201,
+        headers,
     )
     if request.method == "PUT":
         args = request.args
@@ -224,7 +253,7 @@ def products():
              client.fintech.products.update_one({"_id":ObjectId(id)},{"$set":{"price":price}})
         if description and description != '':
              client.fintech.products.update_one({"_id":ObjectId(id)},{"$set":{"description": description}})
-        return ju.dumps({"data": product,"message":"Updated successfully"}), 200, 
+        return ju.dumps({"data": product,"message":"Updated successfully"}), 200, headers
     if request.method == "DELETE":
         args = request.args
         id_ = args.get('id')
@@ -232,15 +261,11 @@ def products():
         if not id_:
             return jsonify({"message":"product ID missing in argument"}), 403
         client.fintech.products.delete_one({"_id":ObjectId(id)})
-        return ju.dumps({"newData": product,"message":"Data deleted successfully"}), 200, 
+        return ju.dumps({"newData": product,"message":"Data deleted successfully"}), 200, headers
     args = request.args
     id_ = args.get("id")
     if id_:
         product = client.fintech.products.find_one({"_id": ObjectId(id_)})
-        return ju.dumps({"data": product}), 200, 
+        return ju.dumps({"data": product}), 200, headers
     product = client.fintech.products.find()
-    return ju.dumps({"data": product}), 200
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return ju.dumps({"data": product}), 200, headers

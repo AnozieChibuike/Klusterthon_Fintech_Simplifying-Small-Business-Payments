@@ -1,12 +1,12 @@
 {
-  "swagger": "2.0",
+  "swagger":"2.0",
   "info": {
     "title": "Klusterthon - Fintech - Simplifying Small Business Payments",
     "version": "1.0.0",
     "description": "An application that enables small businesses to manage their payments efficiently. This app allows business owners to create profiles for each of their clients, track payment transactions, and receive real-time alerts for unpaid invoices."
   },
   "paths": {
-    "/api/swagger": {
+    "api/swagger": {
       "get": {
         "summary": "Get Swagger UI",
         "description": "Retrieve Swagger UI for API documentation",
@@ -28,7 +28,7 @@
         }
       }
     },
-    "/api/users": {
+    "api/users": {
       "get": {
         "summary": "Get Users",
         "description": "Retrieve a list of users or a specific user by ID",
@@ -86,7 +86,7 @@
         }
       }
     },
-    "/api/invoices": {
+    "api/invoices": {
       "get": {
         "summary": "Get Invoices",
         "description": "Retrieve a list of invoices or a specific invoice by ID, user ID, or status",
@@ -123,7 +123,7 @@
         }
       }
     },
-    "/api/invoices/issue": {
+    "api/invoices/issue": {
       "post": {
         "summary": "Issue Invoice",
         "consumes": ["application/json", "application/xml"],
@@ -143,7 +143,23 @@
             "description": "Invoice items",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/IssueRequest"
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "products": {
+                    "type": "object",
+                    "properties": {
+                      "product_id": {
+                        "type": "string"
+                      },
+                      "quantity": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         ],
@@ -157,7 +173,7 @@
         }
       }
     },
-    "/api/invoices/pay": {
+    "api/invoices/pay": {
       "post": {
         "summary": "Pay Invoice",
         "consumes": ["application/json"],
@@ -322,27 +338,6 @@
         }
       },
       "required": ["itemName", "price"]
-    },
-    "IssueRequest": {
-      "type": "object",
-      "properties": {
-        "products": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "product_id": {
-                "type": "string"
-              },
-              "quantity": {
-                "type": "integer"
-              }
-            },
-            "required": ["product_id", "quantity"]
-          }
-        }
-      },
-      "required": ["products"]
     }
   }
 }
