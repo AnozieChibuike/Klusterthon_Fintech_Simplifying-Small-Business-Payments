@@ -4,6 +4,7 @@ from bson import json_util as ju
 from pymongo.mongo_client import MongoClient
 from datetime import datetime
 import os
+import json
 from flask_cors import CORS
 from api import api
 
@@ -51,34 +52,41 @@ def users():
     invoice = list(client.fintech.invoice.find())
     paid = [value for value in invoice if value["paid"]]
     Notpaid = [value for value in invoice if not value["paid"]]
-    product = list(client.fintech.invoice.find())
+    product = list(client.fintech.products.find())
     total = sum([i['items'][-1]['Overalltotal'] for i in invoice])
     return render_template('users.html',total=total,users=users,invoice=invoice,paid=paid,Notpaid=Notpaid,product=product)
+
+@app.post('/check')
+def check():
+    return json.load(request.form['selectedUser'])
 
 @app.get("/invoices")
 def invoices(): 
     use = client.fintech.users
+    user = list(use.find())
     inv = client.fintech.invoice.find()
+    product = list(client.fintech.products.find())
     invoice = [{"user": use.find_one(i['user_id']),"invoice":i,'number':j+1} for j,i in enumerate(inv)]
-    return render_template('invoice.html',invoice=invoice)
+    return render_template('invoice.html',users=user,product=product,invoice=invoice)
 
 @app.post("/invoices/issue")
 def issue():
-    user_id = request.args.get("user_id")
-    products = request.json.get("products", [])  # list of dictionaries
-
+    
+    user_ = request.form.get("selectedUser")
+    produc = request.form.get("selectedProducts", [])  # list of dictionaries
+    products = json.loads(produc)
+    user_id = str(json.loads(user_)[0])
     try:
         if not user_id:
-            raise ValueError("User ID <user_id> must be present in URL")
-
+            raise ValueError("User must be selected")
         user = client.fintech.users.find_one({"_id": ObjectId(user_id)})
         if not user:
             return jsonify({"error": "No user found with such id"}), 404
 
         if not products:
-            raise ValueError("Products must be present in the request JSON")
+            raise ValueError("Products must be selected")
 
-        product_ids = [item.get("product_id") for item in products]
+        product_ids = [item.get("id") for item in products]
         product_quantities = [item.get("quantity") for item in products]
 
         if None in product_ids or None in product_quantities:
@@ -115,23 +123,11 @@ def issue():
             {"_id": ObjectId(user_id)}, {"$push": {"invoice": ObjectId(result.inserted_id)}}
         )
 
-        return (
-            ju.dumps(
-                {
-                    "data": client.fintech.invoice.find_one(
-                        {"_id": ObjectId(result.inserted_id)}
-                    ),
-                    "message": "Data added successfully",
-                    "user": client.fintech.users.find_one({"_id": ObjectId(user_id)}),
-                }
-            ),
-            201,
-        )
-
+        return redirect('/invoices')
     except ValueError as ve:
-        return jsonify({"error": str(ve)}), 400
+        return f'"error" : {str(ve)}'
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return f'"errorE" : {str(e)}'
 
 
 

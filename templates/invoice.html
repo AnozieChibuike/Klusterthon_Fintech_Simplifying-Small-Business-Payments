@@ -10,6 +10,7 @@
         <th scope="col">Customer Name</th>
         <th scope="col">Customer Email</th>
         <th scope="col">Issue Date</th>
+        <th scope="col">Amount</th>
         <th scope="col">Status</th>
       </tr>
     </thead>
@@ -20,6 +21,7 @@
         <td>{{ i.user.firstName }} {{ i.user.lastName }} </td>
         <td>{{ i.user.email }}</td>
         <td>{{ i.invoice.created_at.strftime('%Y-%m-%d') }}</td>
+        <td>{{ i['invoice']['items'][-1]['Overalltotal'] }}</td>
         {% if i.invoice.paid %}
         <td><span style="background-color: green; border-radius: 4px; color: white; padding: 2px 3.5px 2px 3.5px;">Paid</span></td>
         {% else %}
@@ -30,43 +32,138 @@
     </tbody>
   </table>
 </div>
+<form method="post" action="/invoices/issue">
+  <div style="display: grid; grid-template-columns: 1fr 1fr;">
+    <div>
+      <h1 style="color: rgb(51, 237, 0);">Select a Product</h1>
 
+      <select style="padding: 10px;"  id="productDropdown">
+      {% for i in product %}
+      <option style="padding: 10px;" value="{{ i._id }}">ID: {{ i._id }}; Name: {{ i.itemName }}; Price: {{ i.price }}</option>
+      {% endfor %}
+      </select>
+      <br><br>
+      <!-- Add an input field for quantity -->
+      <input  style="padding: 10px;"  type="number" id="quantityInput" placeholder="Quantity" min="1">
+      <br><br>
+      <button style="padding: 10px;"  type="button" onclick="addSelectedProduct()">Add Product to Invoice</button><br><br>
+      <h2 style="color: rgb(51, 237, 0);">Selected Products</h2>
+      <ul id="selectedProducts" style="color: black;"></ul>
+    </div>
+    <div>
+      <!-- Hidden input fields for selected products and quantities -->
+      <input type="hidden" id="selectedProductsInput" name="selectedProducts" value="">
+      <h1 style="color: black;">Select a User</h1>
+      <select id="userDropdown" style="padding: 10px;">
+          {% for user in users %}
+              <option value="{{ user._id }}">email: {{ user.email }}; Name: {{ user.firstName }} {{ user.lastName }}</option>
+          {% endfor %}
+      </select>
+      <br><br>
 
+      <button type="button" onclick="addSelectedUser()" style="padding: 10px;">Add User to Invoice</button>
+      <br><br>
+      <h2 style="color: black;">Selected User</h2>
+      <ul id="selectedUsers" style="color: black;"></ul>
 
-<h1>Select a Product</h1>
-    
-    <select id="productDropdown">
-        <option value="product1">Product 1</option>
-        <option value="product2">Product 2</option>
-        <option value="product3">Product 3</option>
-        <!-- Add more product options as needed -->
-    </select>
-    
-    <button onclick="addSelectedProduct()">Add Selected Product</button>
-    
-    <h2>Selected Products</h2>
-    <ul id="selectedProducts"></ul>
-    
-    <script>
-        function addSelectedProduct() {
-            // Get the selected product from the dropdown
-            const dropdown = document.getElementById('productDropdown');
-            const selectedProduct = dropdown.value;
-            
-            // Check if the product is not already selected
-            if (!document.getElementById(selectedProduct)) {
-                // Add the selected product to the list
-                const selectedProductsList = document.getElementById('selectedProducts');
-                const listItem = document.createElement('li');
-                listItem.id = selectedProduct;
-                listItem.textContent = selectedProduct;
-                selectedProductsList.appendChild(listItem);
-                
-                // Remove the selected product from the dropdown
-                dropdown.remove(dropdown.selectedIndex);
-            } else {
-                alert("Product already selected!");
-            }
-        }
-    </script>
+      <!-- Hidden input field for selected user -->
+      <input type="hidden" id="selectedUserInput" name="selectedUser" value="">
+    </div>
+  </div>
+  <div style="display: flex; justify-content: center;">
+    <button type="submit" style="padding: 20px;">Generate Invoice</button>
+  </div>
+  <script>
+      function addSelectedProduct() {
+          // Get the selected product from the dropdown
+          const dropdown = document.getElementById('productDropdown');
+          const selectedProduct = dropdown.value;
+
+          // Get the quantity from the input field
+          const quantityInput = document.getElementById('quantityInput');
+          const quantity = quantityInput.value;
+
+          // Check if the product is not already selected
+          if (selectedProduct && quantity && !document.getElementById(selectedProduct)) {
+              // Add the selected product to the list with quantity
+              const selectedProductsList = document.getElementById('selectedProducts');
+              const listItem = document.createElement('li');
+              listItem.id = selectedProduct;
+              listItem.textContent = `ID: ${selectedProduct}; Quantity: ${quantity}`;
+              selectedProductsList.appendChild(listItem);
+
+              // Remove the selected product from the dropdown
+              dropdown.remove(dropdown.selectedIndex);
+
+              // Clear the quantity input field
+              quantityInput.value = '';
+
+              // Update the hidden input field with selected products and quantities
+              updateHiddenInput();
+          } else {
+              alert("Please select a product and provide a valid quantity.");
+          }
+      }
+
+      function addSelectedUser() {
+          // Get the selected user from the dropdown
+          const userDropdown = document.getElementById('userDropdown');
+          const selectedUser = userDropdown.value;
+
+          // Remove the previous user from the list
+          const selectedUsersList = document.getElementById('selectedUsers');
+          const previousUser = selectedUsersList.querySelector('li');
+          if (previousUser) {
+              previousUser.remove();
+          }
+
+          // Check if the user is not already selected
+          if (selectedUser) {
+              // Add the selected user to the list
+              const listItem = document.createElement('li');
+              listItem.textContent = `ID: ${selectedUser}`;
+              selectedUsersList.appendChild(listItem);
+
+              // Update the hidden input field with selected user
+              updateHiddenUserInput();
+          } else {
+              alert("Please select a user.");
+          }
+      }
+
+      function updateHiddenUserInput() {
+          const selectedUsersList = document.getElementById('selectedUsers');
+          const hiddenUserInput = document.getElementById('selectedUserInput');
+          const selectedUsers = [];
+
+          // Retrieve selected user from the list
+          const item = selectedUsersList.querySelector('li');
+          if (item) {
+              const id = item.textContent.split(': ')[1];
+              selectedUsers.push(id);
+          }
+
+          // Update the value of the hidden input
+          hiddenUserInput.value = JSON.stringify(selectedUsers);
+      }
+
+      function updateHiddenInput() {
+          const selectedProductsList = document.getElementById('selectedProducts');
+          const hiddenInput = document.getElementById('selectedProductsInput');
+          const selectedProducts = [];
+
+          // Retrieve selected products and quantities from the list
+          selectedProductsList.querySelectorAll('li').forEach((item) => {
+              const parts = item.textContent.split('; ');
+              const id = parts[0].split(': ')[1];
+              const quantity = parts[1].split(': ')[1];
+              selectedProducts.push({ id, quantity });
+          });
+
+          // Update the value of the hidden input field
+          hiddenInput.value = JSON.stringify(selectedProducts);
+      }
+  </script>
+</form>
+
 {% endblock %}
